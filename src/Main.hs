@@ -9,7 +9,7 @@ import Prelude hiding ((.))
 import Control.Wire
 import FRP.Netwire
 import Data.IORef
-import Linear.V2
+import Linear
 
 
 {-|
@@ -23,6 +23,8 @@ s = 0.05
 -}
 speed :: Float
 speed = 1.0
+rot :: Float
+rot = pi
 
 {-|
 Минимальная скорость
@@ -71,6 +73,18 @@ dAcceleration k1 k2  =  withInput decel . isKeyDown k1 . isKeyDown k2
                     <|> pure (-speed)   . isKeyDown k2
                     <|> withInput decel
 
+rotationSpeed :: (Enum k, Monoid e) => k -> k -> Wire s e IO Float Float
+rotationSpeed k1 k2  =   pure ( pi)   . isKeyDown k1
+                    <|> pure (-pi)   . isKeyDown k2
+                    <|> pure (0)  
+
+
+rotationMatrix ::  Float -> V2 (V2 Float)
+rotationMatrix a =  V2 (V2 (cos a) (- sin a)) (V2 (sin a) (cos a))
+
+
+curAngle :: (HasTime t s, Monoid e) => Wire s e IO Float Float
+curAngle = integral 0
 {-|
   Скорость. При выходе скорости за минимальное ограничение сбрасывается в ноль, дабы фигура не ерзала
 -}
@@ -122,9 +136,11 @@ position = integralWith' (collided) initPos
 fPos :: HasTime t s => Wire s () IO a (V2 Float)
 fPos = proc _ -> do
   rec x            <- dAcceleration (CharKey 'D') (CharKey 'A') -< vx
-      y            <- dAcceleration (CharKey 'W') (CharKey 'S') -< vy
-      v@(V2 vx vy) <- velocity                                  -< (x, y)
-      p            <- position                                  -< v
+      --y            <- dAcceleration (CharKey 'W') (CharKey 'S') -< vy
+      r            <- rotationSpeed (CharKey 'W') (CharKey 'S') -< an
+      an           <- curAngle -< r
+      v@(V2 vx vy) <- velocity                                  -< (x, 0)
+      p            <- position                                  -<  (rotationMatrix an) !* v
   returnA -< p
 
 {-|
