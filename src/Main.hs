@@ -2,8 +2,8 @@
 import Graphics.Gloss.Interface.IO.Game
 import Linear.V2
 import Linear.Matrix
-
-data Object = Player (V2 Float) Float Float
+import Data.Monoid (mconcat)
+data Object = Player (V2 Float) Float Float|Bullet (V2 Float) (V2 Float)
 
 type Space = [Object]
 
@@ -21,6 +21,9 @@ decel = 0.05
 
 rotSpeed::Float --скорость поворота, радианы за нажатие
 rotSpeed = pi/8
+
+rotateSpeed::Float -> Float -> V2 Float
+rotateSpeed a v = (rotationMatrix a) !* (V2 v 0) 
 --------------------------------------------------------------------------------
 main :: IO () --входная точка
 main = do
@@ -35,28 +38,35 @@ main = do
     stepGame --обработчик каждого кадра
 
 --------------------------------------------------------------------------------
+spaceToPic:: Space -> [Picture]
+spaceToPic [] = []
+spaceToPic ((Bullet (V2 x y) _):space) = (Color white $ translate x y $ Circle 5):(spaceToPic space)
+
 drawSpace :: Space -> IO Picture --отрисовывает все объекты, используя их коордианты
-drawSpace [Player (V2 x y) v a] = do
-   return $ Color white   $ translate x y $ polygon [(x, y+10), (x, y-10), (x+20, y)]
-   --return $ Color white   $ translate x y $ rotate (180*a/pi) $ polygon [(x, y+10), (x, y-10), (x+20, y)]
+drawSpace ((Player (V2 x y) v a):space) = do
+   return $ mconcat $ (Color white $ translate x y $ rotate ((-180)*a/pi) $ polygon [(0, 10), (0, -10), (20, 0)]):(spaceToPic space)
 
 --------------------------------------------------------------------------------
 handleInput :: Event -> Space -> IO Space -- w - придание ускорения кораблю, d - поворот по часовой, a - против
-handleInput (EventKey (Char 'w') Down _ _) ([Player (V2 x y) v a]) = return $ [Player (V2 x y) (v+accel) a]
-handleInput (EventKey (Char 'a') Down _ _) ([Player (V2 x y) v a]) = return $ [Player (V2 x y) v (a+rotSpeed)]
-handleInput (EventKey (Char 'd') Down _ _) ([Player (V2 x y) v a]) = return $ [Player (V2 x y) v (a-rotSpeed)]
+handleInput (EventKey (Char 'w') Down _ _) ((Player (V2 x y) v a):rest) = return $ (Player (V2 x y) (v+accel) a):rest
+handleInput (EventKey (Char 'a') Down _ _) ((Player (V2 x y) v a):rest) = return $ (Player (V2 x y) v (a+rotSpeed)):rest
+handleInput (EventKey (Char 'd') Down _ _) ((Player (V2 x y) v a):rest) = return $ (Player (V2 x y) v (a-rotSpeed)):rest
+handleInput (EventKey (SpecialKey KeySpace) Down _ _) ((Player (V2 x y) v a):rest) = return $ (Player (V2 x y) v a):rest ++ [Bullet (V2 (x+3) (y+1)) (rotateSpeed a 5)] 
 handleInput  _ space = return space
 
-
+move::Space->Space
+move [] = []
+move ((Bullet (V2 x y) (V2 vx vy)):space) = (Bullet (V2 (x+vx) (y+vy)) (V2 vx vy)):(move space)
 
 stepGame :: Float -> Space -> IO Space
-stepGame _ ([Player (V2 x y) v a]) = do
+stepGame _ ((Player (V2 x y) v a):space) = do
+   print $ length space
    let V2 vx vy = (rotationMatrix a) !* (V2 v 0) --поворот вектора скорости
-   return $ [Player (V2 (x'+vx) (y'+vy))  (max (v-decel) 0) a] where --проверка на выход за пределы экрана
-      x'  | x > 150 = -149
-          | x < -150 = 149
+   return $ (Player (V2 (x'+vx) (y'+vy))  (max (v-decel) 0) a):(move space) where --проверка на выход за пределы экрана
+      x'  | x > 250 = -249
+          | x < -250 = 249
           | otherwise = x
-      y'  | y > 150 = -149
-          | y < -150 = 149
+      y'  | y > 250 = -249
+          | y < -250 = 249	
           | otherwise = y 
 stepGame _ space = return space
