@@ -5,13 +5,13 @@ import Linear.Matrix
 import Data.Monoid (mconcat)
 import System.Random
 
-class Physical a where
+class Physical a where --класс для обработки столкновений
    pos :: a -> (V2 Float)
    vel :: a -> (V2 Float)  
    ang :: a -> Float
    size :: a -> Float   
 
-data Aux = Aux
+data Aux = Aux --информация о игре
    { time :: Float
    , bomb :: Bool
    , cycle :: Int} deriving (Show)  
@@ -201,7 +201,7 @@ drawSpace (Space p b as bon ufo eb) = return $ mconcat $ [drawPlayer p
                                               , drawScore p] 
 
 --------------------------------------------------------------------------------
-handleInput :: Event -> Space -> IO Space -- w - придание ускорения кораблю, d - поворот по часовой, a - против
+handleInput :: Event -> Space -> IO Space -- w - придание ускорения кораблю, d - поворот по часовой, a - против, х - бомба
 handleInput (EventKey (Char 'w') Down _ _) 
             (Space (Player (V2 x y) v a t e j) b as bon ufo eb) = return $ Space (Player (V2 x y) v a t e True) b as bon ufo eb
 handleInput (EventKey (Char 'w') Up _ _) 
@@ -219,7 +219,7 @@ handleInput  _ space = return space
 collision :: (Physical a, Physical b) => a -> b-> Bool
 collision a b = (distance a b) > (size a + size b) 
 
-playerUpdate::Player->Float->Float->Float->[Asteroid]->[Bonus]->[EnemyBullet]->Player
+playerUpdate::Player->Float->Float->Float->[Asteroid]->[Bonus]->[EnemyBullet]->Player --движения + обработка столкновения игрока с пулями и астеродиами
 playerUpdate p@(Player (V2 x y) (V2 v w) a (Aux t b c) e j) vx vy time as bon eb = Player (V2 (x'+vx) (y'+vy)) 
                                                                                        (V2 (max v' 0) w) a 
                                                                                        (Aux t' b' c') e' j where --проверка на выход за пределы экрана
@@ -241,13 +241,13 @@ playerUpdate p@(Player (V2 x y) (V2 v w) a (Aux t b c) e j) vx vy time as bon eb
       b'  | b = b
           | otherwise = not $ and $ map (\a -> collision p a) bon    
 
-bulletUpdate :: Bullet -> [Asteroid] -> [UFO] -> Bullet
+bulletUpdate :: Bullet -> [Asteroid] -> [UFO] -> Bullet -- движение + проверка выхода за экран + столкновение с астероидами
 bulletUpdate (Bullet (V2 x y) (V2 vx vy) e) [] []  = Bullet (V2 (x+vx) (y+vy)) (V2 vx vy) True
 bulletUpdate b@(Bullet (V2 x y) (V2 vx vy) e) as ufo| (x > 250) || (x <(-250)) || (y>250) || (y<(-250)) = Bullet (V2 x y) (V2 vx vy) False
                                                     | otherwise = Bullet (V2 (x+vx) (y+vy)) (V2 vx vy) (and [and $ map (\a -> collision b a) as
                                                                                                            ,and $ map (\a -> collision b a) ufo])
 
-asteroidUpdate :: Asteroid -> [Bullet] -> Asteroid
+asteroidUpdate :: Asteroid -> [Bullet] -> Asteroid --движение + проверка выхода за экран + столкновение с пулями
 asteroidUpdate a@(Asteroid (V2 x y) (V2 vx vy) s e) b = Asteroid (V2 (x'+vx) (y'+vy)) (V2 vx vy) s (and $ map (\bul -> collision bul a) b) where 
                                                      x'  | x > 270 = -269
                                                          | x < -270 = 269
@@ -255,11 +255,11 @@ asteroidUpdate a@(Asteroid (V2 x y) (V2 vx vy) s e) b = Asteroid (V2 (x'+vx) (y'
                                                      y'  | y > 270 = -269
                                                          | y < -270 = 269
                                                          | otherwise = y
-bonusUpdate :: Bonus -> Player -> Bonus
+bonusUpdate :: Bonus -> Player -> Bonus --проверка столкновений с игроком
 bonusUpdate b@(Bonus pos e) p = Bonus pos e' where
     e' = collision b p
 
-ufoUpdate :: UFO -> [Bullet] -> Float -> UFO
+ufoUpdate :: UFO -> [Bullet] -> Float -> UFO --движения, столкновения и логика летающей тарелки
 ufoUpdate ufo@(UFO (V2 x y) (V2 vx vy) a e hp t tur)  b time = UFO (V2 x' y') (V2 vx vy) a' e' hp' t' tur' where
                                                      x' | x <= 25 = x
                                                         | otherwise = x+vx
@@ -275,37 +275,37 @@ ufoUpdate ufo@(UFO (V2 x y) (V2 vx vy) a e hp t tur)  b time = UFO (V2 x' y') (V
                                                      t' | t>1 = 0
                                                         | otherwise = t+time
 
-enemyBulletUpdate :: EnemyBullet -> Player -> EnemyBullet
+enemyBulletUpdate :: EnemyBullet -> Player -> EnemyBullet --движение и столкновение пуль тарелки
 enemyBulletUpdate eb@(EnemyBullet (V2 x y) (V2 vx vy) e) p | (x > 250) || (x <(-250)) || (y>250) || (y<(-250)) = EnemyBullet (V2 x y) (V2 vx vy) False
                                                            | otherwise = EnemyBullet (V2 (x+vx) (y+vy)) (V2 vx vy) (collision eb p)      
-bulletCleanUp :: [Bullet] -> [Bullet]
+bulletCleanUp :: [Bullet] -> [Bullet] --очистка экрана от "умерших" пуль
 bulletCleanUp [] = []
 bulletCleanUp ((Bullet (V2 x y) (V2 vx vy) False):bs) = bulletCleanUp bs
 bulletCleanUp (b:bs) = b:(bulletCleanUp bs)
 
-enemyBulletCleanUp :: [EnemyBullet] -> [EnemyBullet]
+enemyBulletCleanUp :: [EnemyBullet] -> [EnemyBullet] --очистка экрана от "умерших" вражеских пуль
 enemyBulletCleanUp [] = []
 enemyBulletCleanUp ((EnemyBullet (V2 x y) (V2 vx vy) False):bs) = enemyBulletCleanUp bs
 enemyBulletCleanUp (b:bs) = b:(enemyBulletCleanUp bs)
 
-asteroidCleanUp :: [Asteroid] -> [Asteroid]
+asteroidCleanUp :: [Asteroid] -> [Asteroid] --очистка экрана от "умерших" астероидов + порождение мелких из трупов больших
 asteroidCleanUp [] = []
 asteroidCleanUp ((Asteroid (V2 x y) (V2 vx vy) s False):as) | s > 1 = [Asteroid (V2 x y) (V2 (1.5*vx) (1.5*vy)) (s-1) True,
                                                                   Asteroid (V2 x y) (V2 ((-1.5)*vx) (1.5*vy)) (s-1) True] ++ (asteroidCleanUp as)
                                                             |otherwise = asteroidCleanUp as
 asteroidCleanUp (a:as) = a:(asteroidCleanUp as)
 
-bonusCleanUp :: [Bonus] -> [Bonus]
+bonusCleanUp :: [Bonus] -> [Bonus] --очистка экрана от подобранных бонусов
 bonusCleanUp [] = []
 bonusCleanUp ((Bonus pos False):bs) = bonusCleanUp bs
 bonusCleanUp (b:bs) = b:(bonusCleanUp bs)
 
-ufoCleanUp :: [UFO] -> [UFO]
+ufoCleanUp :: [UFO] -> [UFO] --очистка экрана от "умерших" НЛО
 ufoCleanUp [] = []
 ufoCleanUp ((UFO _ _ _ False _ _ _):us) = ufoCleanUp us
 ufoCleanUp (u:us) = u:(ufoCleanUp us) 
 
-addAsteroid :: Player -> Float -> Float -> Float -> Float -> [Asteroid]
+addAsteroid :: Player -> Float -> Float -> Float -> Float -> [Asteroid] 
 addAsteroid (Player (V2 px py) _ _ (Aux t _ c) _ _) x y vx vy| (t>5) = [Asteroid (V2 x' y') (V2 vx' vy') s' True]
                                                              | otherwise = [] where
                                                                x'|x - px < 100 = x+100
@@ -347,13 +347,13 @@ addUFO :: Player -> [UFO]
 addUFO (Player _ _ _ (Aux t _ c) _ _) | (t > 5) && (c `mod` 6 == 5) = [UFO (V2 300 0) (V2 (-1) 0) 0 True 10 0 [0,pi/4,pi/2,3*pi/4,pi,5*pi/4,3*pi/2,7*pi/4]]
                                       | otherwise = [] 
  
-stepGame :: Float -> Space -> IO Space
+stepGame :: Float -> Space -> IO Space --основное тело программы
 stepGame time space@(Space (Player (V2 x y) v a t False j) _ _ _ _ _) = return space
 stepGame t (Space p b as bon ufo eb) = do
    g <- newStdGen
    let randPos = take 4 (randomRs ((-200)::Float,200::Float) g)
    let randV = take 2 (randomRs ((-3)::Float,3::Float) g)
-   let V2 vx vy = (rotationMatrix (ang p)) !* (vel p) --поворот вектора скорости
+   let V2 vx vy = (rotationMatrix (ang p)) !* (vel p) 
    return $ Space (playerUpdate p vx vy t as bon eb) 
                   (bulletCleanUp $ map (\x -> bulletUpdate x as ufo) b) 
                   ((asteroidCleanUp $ map (\x -> asteroidUpdate x b) as) ++ (addAsteroid p (randPos!!1) (randPos!!2) (randV!!0) (randV!!1) )) 
