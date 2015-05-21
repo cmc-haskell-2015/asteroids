@@ -1,51 +1,76 @@
+-- | ???
 module Asteroids.Types where
 
 import Linear.V2
 
-class Physical a where --класс для обработки столкновений
-   pos :: a -> (V2 Float)
-   vel :: a -> (V2 Float)  
-   ang :: a -> Float
-   size :: a -> Float   
+-- | Класс для обработки столкновений.
+class Physical a where
+  -- | ???
+  pos :: a -> (V2 Float)
+  -- | ???
+  vel :: a -> (V2 Float)
+  -- | ???
+  ang :: a -> Float
+  -- | ???
+  size :: a -> Float
 
-data Aux = Aux --информация о игре
-   { time :: Float
-   , bomb :: Bool
-   , cycle :: Int} deriving (Show)  
+-- | Информация о игре.
+data Aux = Aux
+   { time  :: Float   -- ^ ???
+   , bomb  :: Bool    -- ^ ???
+   , cycle :: Int     -- ^ ???
+   } deriving (Show)
 
-data Player = Player 
-   { positionP  :: (V2 Float)
-   , speedP   :: (V2 Float)
-   , angle :: Float 
-   , aux :: Aux
-   , existenceP :: Bool
-   , jet :: Bool} deriving (Show)
+-- | ???
+data Player = Player
+   { positionP  :: (V2 Float)   -- ^ ???
+   , speedP     :: (V2 Float)   -- ^ ???
+   , angle      :: Float        -- ^ ???
+   , aux        :: Aux          -- ^ ???
+   , existenceP :: Bool         -- ^ ???
+   , jet        :: Bool         -- ^ ???
+   } deriving (Show)
+
+-- | ???
 data Bullet = Bullet 
-   { positionB :: (V2 Float) 
-   , speedB :: (V2 Float) 
-   , existenceB :: Bool}
+   { positionB  :: (V2 Float)   -- ^ ???
+   , speedB     :: (V2 Float)   -- ^ ???
+   , existenceB :: Bool         -- ^ ???
+   }
+
+-- | ???
 data Asteroid = Asteroid 
-   { positionA :: (V2 Float) 
-   , speedA :: (V2 Float) 
-   , sizeA :: Float 
-   , existenceA :: Bool} 
+   { positionA  :: (V2 Float)   -- ^ ???
+   , speedA     :: (V2 Float)   -- ^ ???
+   , sizeA      :: Float        -- ^ ???
+   , existenceA :: Bool         -- ^ ???
+   }
+
+-- | ???
 data Bonus = Bonus
-   { positionBon :: (V2 Float)
-   , existenceBon :: Bool
+   { positionBon  :: (V2 Float) -- ^ ???
+   , existenceBon :: Bool       -- ^ ???
    }
+
+-- | ???
 data UFO = UFO
-   { positionU :: (V2 Float)
-   , speedU :: (V2 Float)
-   , angleU :: Float
-   , existenceU :: Bool
-   , hp :: Int
-   , timeU :: Float
-   , angles :: [Float]
+   { positionU  :: (V2 Float)   -- ^ ???
+   , speedU     :: (V2 Float)   -- ^ ???
+   , angleU     :: Float        -- ^ ???
+   , existenceU :: Bool         -- ^ ???
+   , hp         :: Int          -- ^ ???
+   , timeU      :: Float        -- ^ ???
+   , angles     :: [Float]      -- ^ ???
    }
+
+-- | ???
 data EnemyBullet = EnemyBullet
-   { positionE :: (V2 Float)
-   , speedE :: (V2 Float)
-   , existenceE :: Bool} 
+   { positionE  :: (V2 Float)   -- ^ ???
+   , speedE     :: (V2 Float)   -- ^ ???
+   , existenceE :: Bool         -- ^ ???
+   } 
+
+-- | ???
 data Space = Space Player [Bullet] [Asteroid] [Bonus] [UFO] [EnemyBullet]
 
 instance Physical Player where
