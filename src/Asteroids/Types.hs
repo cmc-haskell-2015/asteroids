@@ -5,73 +5,81 @@ import Linear.V2
 
 -- | Класс для обработки столкновений.
 class Physical a where
-  -- | ???
+  -- | Позиция.
   pos :: a -> (V2 Float)
-  -- | ???
+  -- | Скорость.
   vel :: a -> (V2 Float)
-  -- | ???
+  -- | Угол поворота.
   ang :: a -> Float
-  -- | ???
+  -- | Размер.
   size :: a -> Float
 
 -- | Информация о игре.
 data Aux = Aux
-   { time  :: Float   -- ^ ???
-   , bomb  :: Bool    -- ^ ???
-   , cycle :: Int     -- ^ ???
+   { timeA  :: Float   -- ^ Время.
+   , bombA  :: Bool    -- ^ Наличие бомбы.
+   , cycleA :: Int     -- ^ Прошедшее число циклов (1 цикл = 5 сек).
    } deriving (Show)
 
--- | ???
+-- | Игрок
 data Player = Player
-   { positionP  :: (V2 Float)   -- ^ ???
-   , speedP     :: (V2 Float)   -- ^ ???
-   , angle      :: Float        -- ^ ???
-   , aux        :: Aux          -- ^ ???
-   , existenceP :: Bool         -- ^ ???
-   , jet        :: Bool         -- ^ ???
+   { positionP  :: (V2 Float)    -- ^ Позиция игрока.
+   , speedP     :: (V2 Float)    -- ^ Скорость. 
+   , angleP      :: Float        -- ^ Угол.
+   , auxP        :: Aux          -- ^ Дополнительные данные.
+   , existenceP :: Bool          -- ^ Жив ли?
+   , jetP        :: Bool         -- ^ Включены ли движки?
    } deriving (Show)
 
--- | ???
+-- | Пуля
 data Bullet = Bullet 
-   { positionB  :: (V2 Float)   -- ^ ???
-   , speedB     :: (V2 Float)   -- ^ ???
-   , existenceB :: Bool         -- ^ ???
+   { positionB  :: (V2 Float)   -- ^ Позиция пули
+   , speedB     :: (V2 Float)   -- ^ Скорость
+   , existenceB :: Bool         -- ^ Жива ли?
    }
 
--- | ???
+-- | Астероид
 data Asteroid = Asteroid 
-   { positionA  :: (V2 Float)   -- ^ ???
-   , speedA     :: (V2 Float)   -- ^ ???
-   , sizeA      :: Float        -- ^ ???
-   , existenceA :: Bool         -- ^ ???
+   { positionA  :: (V2 Float)   -- ^ Позиция.
+   , speedA     :: (V2 Float)   -- ^ Скорость.
+   , sizeA      :: Float        -- ^ Размер.
+   , existenceA :: Bool         -- ^ Жив ли?
    }
 
--- | ???
+-- | Бонус.
 data Bonus = Bonus
-   { positionBon  :: (V2 Float) -- ^ ???
-   , existenceBon :: Bool       -- ^ ???
+   { positionBon  :: (V2 Float) -- ^ Позиция.
+   , existenceBon :: Bool       -- ^ Жив ли?
    }
 
--- | ???
+-- | НЛО.
 data UFO = UFO
-   { positionU  :: (V2 Float)   -- ^ ???
-   , speedU     :: (V2 Float)   -- ^ ???
-   , angleU     :: Float        -- ^ ???
-   , existenceU :: Bool         -- ^ ???
-   , hp         :: Int          -- ^ ???
-   , timeU      :: Float        -- ^ ???
-   , angles     :: [Float]      -- ^ ???
+   { positionU  :: (V2 Float)   -- ^ Позиция.
+   , speedU     :: (V2 Float)   -- ^ Скорость.
+   , angleU     :: Float        -- ^ Угол.
+   , existenceU :: Bool         -- ^ Существование.
+   , hpU         :: Int          -- ^ Здоровье.
+   , timeU      :: Float        -- ^ Время.
+   , angles     :: [Float]      -- ^ Расположение турелей (в виде углов относительно окружности НЛО).
    }
 
--- | ???
+-- | Вражеская пуля.
 data EnemyBullet = EnemyBullet
-   { positionE  :: (V2 Float)   -- ^ ???
-   , speedE     :: (V2 Float)   -- ^ ???
-   , existenceE :: Bool         -- ^ ???
+   { positionE  :: (V2 Float)   -- ^ Позиция.
+   , speedE     :: (V2 Float)   -- ^ Скорость.
+   , existenceE :: Bool         -- ^ Существование.
    } 
 
--- | ???
+-- | Космос.
 data Space = Space Player [Bullet] [Asteroid] [Bonus] [UFO] [EnemyBullet]
+
+-- | Угол.
+type Angle = Float
+
+-- | Время.
+type Time = Float
+
+type Cycle = Int
 
 instance Physical Player where
    pos (Player p _ _ _ _ _) = p
